@@ -31,12 +31,15 @@ vi.mock('../tab-manager', () => ({
   injectContentScript: (id: number) => injectContentScript(id),
   isInjectableTab: () => true,
 }));
+const { settings } = vi.hoisted(() => ({ settings: { value: {} as Record<string, unknown> } }));
+vi.mock('@/lib/browser-api/local-storage', () => ({ localStorage: { get: async () => settings.value } }));
 vi.mock('@mimik/core/logger', () => ({ logger: { info: vi.fn(), debug: vi.fn(), warn: vi.fn(), error: vi.fn() } }));
 
 import { registerNavigationListeners } from '../navigation';
 
 beforeEach(() => {
   vi.clearAllMocks();
+  settings.value = {};
   listeners.clear();
   actor = createActor(captureMachine);
   actor.start();
@@ -49,6 +52,12 @@ function url() {
 }
 
 describe('URL tracking', () => {
+  it('keeps the invite token out of the current URL in interview mode', async () => {
+    settings.value = { interviewMode: true };
+    await listeners.get('pushState')?.({ frameId: 0, url: 'https://app.test/?x=1#/interview/secret' });
+    expect(url()).toBe('https://app.test/');
+  });
+
   it('follows a navigation while recording', async () => {
     await listeners.get('navigated')?.({ frameId: 0, url: 'https://app.test/b' });
     expect(url()).toBe('https://app.test/b');

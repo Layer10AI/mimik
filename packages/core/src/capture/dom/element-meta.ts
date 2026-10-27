@@ -4,6 +4,15 @@ import type { ElementMeta } from '@/core/guides/types';
 function getCleanText(el: HTMLElement): string | null {
   if (el instanceof HTMLInputElement) return null;
   const clone = el.cloneNode(true) as HTMLElement;
+  // Off its page the copy loses the page's CSS, so parts styled as separate lines would run
+  // together ("Credit ServicesFinance"). Keep each part's display as the page shows it.
+  if (el.isConnected) {
+    const originals = el.querySelectorAll('*');
+    clone.querySelectorAll('*').forEach((copy, i) => {
+      const display = getComputedStyle(originals[i]!).display;
+      if (display && display !== 'inline') (copy as HTMLElement).style.display = display;
+    });
+  }
   for (const input of clone.querySelectorAll('input')) input.remove();
   clone.style.position = 'absolute';
   clone.style.left = '-9999px';

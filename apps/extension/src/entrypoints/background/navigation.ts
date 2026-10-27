@@ -1,6 +1,8 @@
 import { logger } from '@mimik/core/logger';
 import { isLive } from '@/core/capture/is-live';
+import { trimUrl } from '@/core/transfer/bundle';
 import { getTab } from '@/lib/browser-api/get-tab';
+import { localStorage } from '@/lib/browser-api/local-storage';
 import { onHistoryStateUpdated } from '@/lib/browser-api/on-history-state-updated';
 import { onNavigationCompleted } from '@/lib/browser-api/on-navigation-completed';
 import { onTabActivated } from '@/lib/browser-api/on-tab-activated';
@@ -10,6 +12,13 @@ import { TabMessage } from '@/lib/tab-messages';
 import { getActor, waitUntilReady } from './actor';
 import { injectContentScript, isInjectableTab } from './tab-manager';
 
+// In a ValueScout interview the page URL carries the invite token in its hash; Mimik's state
+// (and its session-storage snapshot) keeps only origin and path.
+async function pageUrl(url: string): Promise<string> {
+  const { interviewMode } = await localStorage.get(['interviewMode']);
+  return interviewMode === true ? trimUrl(url, 'path') : url;
+}
+
 export function registerNavigationListeners() {
   onNavigationCompleted(async (details) => {
     if (details.frameId !== 0) return;
@@ -17,7 +26,7 @@ export function registerNavigationListeners() {
     const state = getActor().getSnapshot();
     if (isLive(state.value)) {
       logger.debug('URL changed (navigation) →', details.url);
-      getActor().send({ type: 'URL_CHANGED', url: details.url });
+      getActor().send({ type: 'URL_CHANGED', url: await pageUrl(details.url) });
     }
   });
 
@@ -27,7 +36,7 @@ export function registerNavigationListeners() {
     const state = getActor().getSnapshot();
     if (isLive(state.value)) {
       logger.debug('URL changed (SPA pushState) →', details.url);
-      getActor().send({ type: 'URL_CHANGED', url: details.url });
+      getActor().send({ type: 'URL_CHANGED', url: await pageUrl(details.url) });
     }
   });
 
