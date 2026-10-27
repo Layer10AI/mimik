@@ -65,6 +65,23 @@ describe('the ValueScout interview page in interview mode', () => {
     expect(await clicksRecordedAt(interview, false)).toBe(1);
   });
 
+  it('is not recorded before the settings have loaded', async () => {
+    settings.value = { interviewMode: true };
+    const { localStorage } = await import('@/lib/browser-api/local-storage');
+    vi.mocked(localStorage.get).mockReturnValueOnce(new Promise(() => {}) as never);
+    (window as unknown as { happyDOM: { setURL(url: string): void } }).happyDOM.setURL(interview);
+    vi.stubGlobal('requestAnimationFrame', (cb: FrameRequestCallback) => {
+      setTimeout(() => cb(0), 0);
+      return 0;
+    });
+    vi.mocked(sendMessage).mockReset();
+    vi.mocked(sendMessage).mockResolvedValue({ stepId: 'step-1' } as never);
+    handle = startCapture('guide-1');
+    click(button());
+    await settle();
+    expect(vi.mocked(sendMessage).mock.calls.filter(([type]) => type === 'captureStep')).toHaveLength(0);
+  });
+
   it('leaves the rest of the app recorded during the interview', async () => {
     expect(await clicksRecordedAt('https://valuescout.layer10.ai/#/org/org-1/campaigns', true)).toBe(1);
   });

@@ -78,7 +78,8 @@ class CaptureController {
   private busy = false;
   private recordKeys = false;
   private recordTyping = true;
-  private hideTyped = { setting: false, interview: false };
+  // Until the settings load, assume an interview: the interview page is skipped and typed text hidden.
+  private hideTyped = { setting: false, interview: true };
   // A list option picked on pointerdown; a click on it soon after is the same pick.
   private pickedOption: Element | null = null;
   private pickedAt = 0;
