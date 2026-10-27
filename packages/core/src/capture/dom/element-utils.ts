@@ -74,8 +74,16 @@ export function isSensitiveField(el: Element | null): boolean {
   return el instanceof HTMLInputElement && el.type === 'password';
 }
 
+// "Keep typed text out of steps": every text field then counts as redacted, so steps
+// name the field but never carry what was typed.
+let typedTextHidden = false;
+
+export function hideTypedText(on: boolean): void {
+  typedTextHidden = on;
+}
+
 export function isRedactedField(el: Element | null): boolean {
-  return el instanceof Element && !!el.closest(`[${REDACT_ATTR}]`);
+  return el instanceof Element && (!!el.closest(`[${REDACT_ATTR}]`) || (typedTextHidden && isTextField(el)));
 }
 
 export function eventTarget(e: Event): Element | null {

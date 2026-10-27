@@ -102,6 +102,8 @@ settings:
   recordKeysHint: "Strg+S, Enter und Ähnliches werden zu Schritten."
   recordTyping: "Eingaben aufzeichnen"
   recordTypingHint: "Alles, was du in ein Feld tippst, wird ein Schritt."
+  hideTypedText: "Eingegebenen Text nicht in Schritte aufnehmen"
+  hideTypedTextHint: "Schritte nennen das Feld, nicht den eingegebenen Text."
   microphoneAccess: "Mikrofonzugriff"
   microphoneAccessAsk: "Dein Browser fragt einmal, bevor Mimik dich hören kann."
   microphoneAccessAllow: "Erlauben"

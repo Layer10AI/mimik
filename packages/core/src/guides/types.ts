@@ -107,6 +107,9 @@ export interface Settings {
   appLanguage: string;
   recordKeys: boolean;
   recordTyping: boolean;
+  hideTypedText: boolean;
+  /** Set while a ValueScout interview page is recording: typed text and URL queries/hashes stay out. */
+  interviewMode: boolean;
 }
 
 export type SettingsKey = keyof Settings;

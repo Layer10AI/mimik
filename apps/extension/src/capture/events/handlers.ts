@@ -7,6 +7,7 @@ import { extractElementMeta, freezeRect } from '@/core/capture/dom/element-meta'
 import {
   eventTarget,
   findFocusableAncestor,
+  hideTypedText,
   isMimikElement,
   isNavigatingClick,
   isSensitiveField,
@@ -75,11 +76,16 @@ class CaptureController {
   private busy = false;
   private recordKeys = false;
   private recordTyping = true;
+  private hideTyped = { setting: false, interview: false };
   // A list option picked on pointerdown; the click that may follow is the same pick.
   private pickedOption: Element | null = null;
   private readonly onSettingsChanged = (changes: Record<string, { newValue?: unknown }>) => {
     if (changes.recordKeys) this.recordKeys = changes.recordKeys.newValue === true;
     if (changes.recordTyping) this.recordTyping = changes.recordTyping.newValue !== false;
+    if (changes.hideTypedText) this.hideTyped.setting = changes.hideTypedText.newValue === true;
+    if (changes.interviewMode) this.hideTyped.interview = changes.interviewMode.newValue === true;
+    if (changes.hideTypedText || changes.interviewMode)
+      hideTypedText(this.hideTyped.setting || this.hideTyped.interview);
     const color = changes.targetColor?.newValue;
     if (typeof color === 'string' && color) this.ring.setColor(color);
   };
@@ -116,10 +122,12 @@ class CaptureController {
         .catch(() => {});
     }
     localStorage
-      .get(['recordKeys', 'recordTyping'])
-      .then(({ recordKeys, recordTyping }) => {
+      .get(['recordKeys', 'recordTyping', 'hideTypedText', 'interviewMode'])
+      .then(({ recordKeys, recordTyping, hideTypedText: hideSetting, interviewMode }) => {
         this.recordKeys = recordKeys === true;
         this.recordTyping = recordTyping !== false;
+        this.hideTyped = { setting: hideSetting === true, interview: interviewMode === true };
+        hideTypedText(this.hideTyped.setting || this.hideTyped.interview);
       })
       .catch(() => {});
     browser.storage.local.onChanged.addListener(this.onSettingsChanged);

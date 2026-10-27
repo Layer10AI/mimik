@@ -102,6 +102,8 @@ settings:
   recordKeysHint: "Ctrl+S, Enter e afins viram passos."
   recordTyping: "Registrar o que você digita"
   recordTypingHint: "Tudo o que você digita em um campo vira uma etapa."
+  hideTypedText: "Não incluir o texto digitado nas etapas"
+  hideTypedTextHint: "As etapas indicam o campo em que você digitou, não o que digitou."
   microphoneAccess: "Acesso ao microfone"
   microphoneAccessAsk: "Seu navegador pergunta uma vez antes que o Mimik possa ouvir você."
   microphoneAccessAllow: "Permitir"

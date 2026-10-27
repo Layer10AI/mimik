@@ -102,6 +102,8 @@ settings:
   recordKeysHint: "Ctrl+S, Enter и подобные становятся шагами."
   recordTyping: Записывать ввод текста
   recordTypingHint: "Всё, что вы вводите в одно поле, становится одним шагом."
+  hideTypedText: "Не включать введённый текст в шаги"
+  hideTypedTextHint: "В шагах указано поле, но не то, что вы ввели."
   microphoneAccess: Доступ к микрофону
   microphoneAccessAsk: "Браузер один раз спросит разрешение, прежде чем Mimik сможет вас слышать."
   microphoneAccessAllow: Разрешить

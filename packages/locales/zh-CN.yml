@@ -102,6 +102,8 @@ settings:
   recordKeysHint: "Ctrl+S、Enter 等会成为步骤。"
   recordTyping: "记录输入内容"
   recordTypingHint: "在一个输入框中输入的内容会成为一个步骤。"
+  hideTypedText: "步骤中不包含输入的文字"
+  hideTypedTextHint: "步骤只说明在哪个输入框中输入，不记录输入内容。"
   microphoneAccess: "麦克风权限"
   microphoneAccessAsk: "浏览器会先询问一次，Mimik 才能听到你的声音。"
   microphoneAccessAllow: "允许"

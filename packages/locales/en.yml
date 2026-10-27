@@ -102,6 +102,8 @@ settings:
   recordKeysHint: "Ctrl+S, Enter and the like become steps."
   recordTyping: "Record what you type"
   recordTypingHint: "Everything you type into one field becomes one step."
+  hideTypedText: "Keep typed text out of steps"
+  hideTypedTextHint: "Steps name the field you typed in, not what you typed."
   microphoneAccess: "Microphone access"
   microphoneAccessAsk: "Your browser asks once before Mimik can hear you."
   microphoneAccessAllow: "Allow"

@@ -33,6 +33,7 @@ export function SettingsView({ onBack, layout = 'column' }: SettingsViewProps) {
   const [loaded, setLoaded] = useState(false);
   const [recordKeys, setRecordKeys] = useState(false);
   const [recordTyping, setRecordTyping] = useState(true);
+  const [hideTypedText, setHideTypedText] = useState(false);
   const [blurPresets, setBlurPresets] = useState<Record<PresetKey, boolean>>({
     email: true,
     phone: true,
@@ -43,15 +44,16 @@ export function SettingsView({ onBack, layout = 'column' }: SettingsViewProps) {
   });
 
   useEffect(() => {
-    localStorage.get(['blurPresets', 'recordKeys', 'recordTyping']).then((result) => {
+    localStorage.get(['blurPresets', 'recordKeys', 'recordTyping', 'hideTypedText']).then((result) => {
       if (result.blurPresets) setBlurPresets(result.blurPresets as Record<PresetKey, boolean>);
       setRecordKeys(result.recordKeys === true);
       setRecordTyping(result.recordTyping !== false);
+      setHideTypedText(result.hideTypedText === true);
       setLoaded(true);
     });
   }, []);
 
-  const { saved, queue } = useSettingsAutosave({ blurPresets, recordKeys, recordTyping }, loaded);
+  const { saved, queue } = useSettingsAutosave({ blurPresets, recordKeys, recordTyping, hideTypedText }, loaded);
   const keys = useApiKeys({ onChange: queue });
 
   const showSection = (next: SettingsSection) => {
@@ -128,6 +130,20 @@ export function SettingsView({ onBack, layout = 'column' }: SettingsViewProps) {
             onChange={(on) => {
               setRecordTyping(on);
               localStorage.set({ recordTyping: on });
+            }}
+          />
+        </div>
+        <div className="flex items-center justify-between gap-3 py-2 border-b border-secondary">
+          <div className="min-w-0">
+            <p className="text-[11px] font-semibold text-foreground">{i18n.t('settings.hideTypedText')}</p>
+            <p className="text-[11px] text-muted-foreground">{i18n.t('settings.hideTypedTextHint')}</p>
+          </div>
+          <Switch
+            checked={hideTypedText}
+            label={i18n.t('settings.hideTypedText')}
+            onChange={(on) => {
+              setHideTypedText(on);
+              localStorage.set({ hideTypedText: on });
             }}
           />
         </div>
