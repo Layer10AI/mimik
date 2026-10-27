@@ -8,6 +8,8 @@ import {
   MASCOT_VIEW_BOX,
   type MascotPose,
 } from '../lib/mascot-shapes';
+import { valuescoutStoreBuild } from '../lib/store-build';
+import { ScoutMascot } from './ScoutMascot';
 
 interface MascotIconProps {
   size?: number;
@@ -16,6 +18,7 @@ interface MascotIconProps {
 }
 
 export function MascotIcon({ size = 22, pose = 'happy', tone = 'brand' }: MascotIconProps) {
+  if (valuescoutStoreBuild) return <ScoutMascot size={size} pose={pose} tone={tone} />;
   const muted = tone === 'muted';
   const body = muted ? 'fill-current opacity-55' : 'fill-primary';
   const crown = muted ? 'fill-current opacity-80' : 'fill-violet-mid';

@@ -7,6 +7,8 @@ import {
   MASCOT_FACES,
   MASCOT_SEAM,
 } from '../lib/mascot-shapes';
+import { valuescoutStoreBuild } from '../lib/store-build';
+import { ScoutCamera } from './ScoutCamera';
 
 const FLASH = {
   loop: 'animate-[cam-flash_3s_ease_infinite]',
@@ -20,6 +22,7 @@ interface CameraMascotProps {
 }
 
 export function CameraMascot({ size = 64, flash = 'loop' }: CameraMascotProps) {
+  if (valuescoutStoreBuild) return <ScoutCamera size={size} flash={flash} />;
   const face = MASCOT_FACES.happy;
   const camera = CAMERA_MASCOT_PARTS;
   return (

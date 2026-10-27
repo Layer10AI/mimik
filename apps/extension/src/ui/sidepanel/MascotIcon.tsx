@@ -1,4 +1,7 @@
+import { ScoutMascot, valuescoutStoreBuild } from '@mimik/ui';
+
 export function MascotIcon({ size = 44 }: { size?: number }) {
+  if (valuescoutStoreBuild) return <ScoutMascot size={size} />;
   return (
     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" width={size} height={size}>
       <defs>
