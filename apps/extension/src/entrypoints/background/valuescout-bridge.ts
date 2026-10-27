@@ -2,6 +2,7 @@ import { browser } from '#imports';
 import { actionSteps } from '@/core/guides/blocks';
 import { getScreenshotsForSteps, getStepsForGuide } from '@/core/guides/service';
 import { renderScreenshot } from '@/core/screenshot/render';
+import { localStorage } from '@/lib/browser-api/local-storage';
 
 // ValueScout spike: the interview page drives a recording over externally_connectable with
 // one-shot messages, so a service worker restart mid-recording loses nothing. The page keeps
@@ -62,6 +63,8 @@ export function registerValueScoutBridge(recorder: Recorder): void {
   async function start(url: string) {
     if (recorder.current()) throw new Error('Mimik is already recording');
     // Only the origin: the interview URL carries the invite token, and Mimik keeps the start URL with the guide.
+    // Interview mode: typed text stays out of steps and stored URLs lose their query and hash.
+    await localStorage.set({ interviewMode: true });
     const { guideId } = await recorder.start(new URL(url).origin);
     await browser.storage.session.set({ [ownedGuideKey]: guideId });
     return { guideId };
@@ -91,4 +94,9 @@ export function registerValueScoutBridge(recorder: Recorder): void {
     if (message?.type === 'stop') return reply(stop());
     return false;
   });
+}
+
+// Every way a recording ends clears interview mode, so the person's own later guides are unaffected.
+export function endInterviewMode(): Promise<void> {
+  return localStorage.set({ interviewMode: false });
 }

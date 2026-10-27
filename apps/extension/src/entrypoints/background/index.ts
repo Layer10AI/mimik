@@ -43,7 +43,7 @@ import {
   isInjectableTab,
   showNotificationOnTab,
 } from './tab-manager';
-import { registerValueScoutBridge } from './valuescout-bridge';
+import { endInterviewMode, registerValueScoutBridge } from './valuescout-bridge';
 import {
   abortVoiceNarration,
   canStartNarrationNow,
@@ -159,6 +159,7 @@ export default defineBackground(() => {
     await broadcastDetachCaptureAndFlush();
     await broadcastClearBlur();
     actor.send({ type: 'STOP_RECORDING' });
+    await endInterviewMode();
 
     const narrationStopped = guideId ? stopVoiceNarration(guideId) : Promise.resolve();
 
@@ -192,6 +193,7 @@ export default defineBackground(() => {
     await broadcastDetachCapture();
     await broadcastClearBlur();
     actor.send({ type: 'STOP_RECORDING' });
+    await endInterviewMode();
     await abortVoiceNarration();
     if (!guideId) return { discarded: false };
     if (insertTargetGuideId !== null) await permanentlyDeleteGuide(guideId);

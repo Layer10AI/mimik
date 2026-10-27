@@ -14,6 +14,7 @@ import {
 } from '@/core/guides/service';
 import type { ElementMeta } from '@/core/guides/types';
 import { screenshotForElement } from '@/core/screenshot/record';
+import { trimUrl } from '@/core/transfer/bundle';
 import { captureVisibleTab } from '@/lib/browser-api/capture-visible-tab';
 import { localStorage } from '@/lib/browser-api/local-storage';
 import type { CaptureStepData, CaptureStepResponse } from '@/lib/messaging';
@@ -68,6 +69,9 @@ export async function handleCaptureStep(data: CaptureStepData): Promise<CaptureS
   const stepId = crypto.randomUUID();
   const screenshotId = await takeScreenshot(stepId, data.elementMeta);
   const domContext = data.domContext;
+  // In a ValueScout interview the page URL carries the invite token in its hash.
+  const { interviewMode } = await localStorage.get(['interviewMode']);
+  const url = interviewMode === true ? trimUrl(snap.context.currentUrl, 'path') : snap.context.currentUrl;
 
   await writeStep({
     stepId,
@@ -75,7 +79,7 @@ export async function handleCaptureStep(data: CaptureStepData): Promise<CaptureS
     action: data.action,
     elementMeta: data.elementMeta,
     screenshotId,
-    place: { url: snap.context.currentUrl },
+    place: { url },
     describable: data.action !== 'input' && domContext !== undefined,
     describe: () => (domContext ? describeDomStep(stepId, domContext) : Promise.resolve()),
     narration: getVoiceUpdate().phase === 'recording' ? narration : null,

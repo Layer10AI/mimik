@@ -20,7 +20,7 @@ vi.mock('@/core/guides/service', () => ({
 
 vi.mock('@/core/screenshot/render', () => ({ renderScreenshot: vi.fn() }));
 
-import { registerValueScoutBridge } from '../valuescout-bridge';
+import { endInterviewMode, registerValueScoutBridge } from '../valuescout-bridge';
 
 const interview = 'https://valuescout.layer10.ai/#/interview/secret-token';
 let current: string | null;
@@ -62,6 +62,13 @@ describe('ValueScout bridge', () => {
     const reply = await send({ type: 'start' }, 'https://valuescout.layer10.ai/#/org/org-1');
     expect(reply.error).toMatch(/interview page/);
     expect(recorder.start).not.toHaveBeenCalled();
+  });
+
+  it('turns on interview mode for the recording, and endInterviewMode turns it off', async () => {
+    await send({ type: 'start' });
+    expect((await fakeBrowser.storage.local.get('interviewMode')).interviewMode).toBe(true);
+    await endInterviewMode();
+    expect((await fakeBrowser.storage.local.get('interviewMode')).interviewMode).toBe(false);
   });
 
   it("checks the tab's current URL, not the one the page loaded with", async () => {
