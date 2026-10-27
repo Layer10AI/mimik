@@ -1,4 +1,11 @@
+import { readdirSync, readFileSync, writeFileSync } from "node:fs";
+import { join } from "node:path";
 import { defineConfig } from "wxt";
+
+// VALUESCOUT_STORE=1 builds the Chrome Web Store package: ValueScout's own name and icons, and no
+// fixed key (the store assigns the id). Plain builds stay the tester build with the fixed id.
+const store = process.env.VALUESCOUT_STORE === "1";
+const storeName = "ValueScout Show-me";
 import tailwindcss from "@tailwindcss/vite";
 
 export default defineConfig({
@@ -39,6 +46,15 @@ export default defineConfig({
     plugins: [tailwindcss()],
   }),
   hooks: {
+    // The store build shows its own name wherever the interface would say Mimik.
+    'build:done': (wxt) => {
+      if (!store) return;
+      const locales = join(wxt.config.outDir, "_locales");
+      for (const locale of readdirSync(locales)) {
+        const file = join(locales, locale, "messages.json");
+        writeFileSync(file, readFileSync(file, "utf8").replaceAll("Mimik", storeName));
+      }
+    },
     'build:manifestGenerated': (wxt, manifest) => {
       if (wxt.config.browser === 'firefox' && manifest.sidebar_action) {
         (manifest.sidebar_action as Record<string, unknown>).open_at_install = false;
@@ -49,14 +65,16 @@ export default defineConfig({
   manifest: ({ browser }) => {
     const isFirefox = browser === 'firefox';
     return {
-      name: "__MSG_app_store_title__",
-      description: "__MSG_app_description__",
+      name: store ? storeName : "__MSG_app_store_title__",
+      description: store
+        ? "Show your ValueScout interviewer how you do your work: records your clicks as steps with screenshots."
+        : "__MSG_app_description__",
       default_locale: "en",
       // ValueScout spike: lets the interview page start a recording and take its steps.
       externally_connectable: { matches: ["https://valuescout.layer10.ai/*"] },
       // Fixed public key, so every unpacked install has the extension id the ValueScout interview
       // page expects (dcijdocmnoghlfppljeiclnjigefhodn). A Web Store listing assigns its own id.
-      ...(isFirefox ? {} : { key: "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAwgHHf6WroylaVXtF4D05H0wjqlvhHdY10RcPkDVwBkODzm5NGPQ8SVRZ1om9DpV8ka+5Rjf8tr9mNVDeCWhkyi/qdBVCIARhx+9FRRjlPEDFi+kps0dAhBbTqH5Bdv57l3xMizLdMLpf5Lk6cJkbNP2z8BPdBDJAqpFdjMXWsI6h0ldxuG1xV+HDNsaRYfqYpjPv0xR3Jzlf8lSpxnCeWzNjwtt09y8srYnQ+XWyWUM1KNHApkirBpt1nW3W0DdslMkVP2cRgnFp9zIJ1Hu2fOrpCUfccxivNXiQcKSBIevMMywOvsmM6xWS4f6kZS3FoR8c3iEYMNJx5pIblAzyfQIDAQAB" }),
+      ...(isFirefox || store ? {} : { key: "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAwgHHf6WroylaVXtF4D05H0wjqlvhHdY10RcPkDVwBkODzm5NGPQ8SVRZ1om9DpV8ka+5Rjf8tr9mNVDeCWhkyi/qdBVCIARhx+9FRRjlPEDFi+kps0dAhBbTqH5Bdv57l3xMizLdMLpf5Lk6cJkbNP2z8BPdBDJAqpFdjMXWsI6h0ldxuG1xV+HDNsaRYfqYpjPv0xR3Jzlf8lSpxnCeWzNjwtt09y8srYnQ+XWyWUM1KNHApkirBpt1nW3W0DdslMkVP2cRgnFp9zIJ1Hu2fOrpCUfccxivNXiQcKSBIevMMywOvsmM6xWS4f6kZS3FoR8c3iEYMNJx5pIblAzyfQIDAQAB" }),
       permissions: [
         "storage",
         "activeTab",
@@ -69,12 +87,19 @@ export default defineConfig({
       ...(isFirefox
         ? { optional_host_permissions: ["<all_urls>"] }
         : { host_permissions: ["<all_urls>"], minimum_chrome_version: "118" }),
-      icons: {
-        16: 'icon16.png',
-        32: 'icon32.png',
-        48: 'icon48.png',
-        128: 'icon128.png',
-      },
+      icons: store
+        ? {
+            16: 'valuescout/icon16.png',
+            32: 'valuescout/icon32.png',
+            48: 'valuescout/icon48.png',
+            128: 'valuescout/icon128.png',
+          }
+        : {
+            16: 'icon16.png',
+            32: 'icon32.png',
+            48: 'icon48.png',
+            128: 'icon128.png',
+          },
       action: {},
       ...(isFirefox
         ? {

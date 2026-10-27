@@ -1,5 +1,7 @@
-# ValueScout fork: builds the Chrome extension zip for every PR into `valuescout` (as a workflow
-# artifact) and, on each merge, publishes it as a GitHub release testers can install from.
+# ValueScout fork: builds two Chrome extension zips for every PR into `valuescout` (as a workflow
+# artifact) and, on each merge, publishes them as a GitHub release:
+# - valuescout-mimik-<sha>.zip, the tester build with the fixed extension id (install unpacked);
+# - valuescout-show-me-store-<sha>.zip, the Chrome Web Store build (own name and icons, no key).
 name: ValueScout build
 
 on:
@@ -43,10 +45,20 @@ jobs:
           cd apps/extension/.output/chrome-mv3
           zip -qr "$GITHUB_WORKSPACE/valuescout-mimik-${GITHUB_SHA::7}.zip" .
 
+      - name: Build Chrome Web Store package
+        env:
+          VALUESCOUT_STORE: "1"
+        run: pnpm build
+
+      - name: Zip store package
+        run: |
+          cd apps/extension/.output/chrome-mv3
+          zip -qr "$GITHUB_WORKSPACE/valuescout-show-me-store-${GITHUB_SHA::7}.zip" .
+
       - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: valuescout-mimik
-          path: valuescout-mimik-*.zip
+          path: valuescout-*.zip
           if-no-files-found: error
 
   release:
@@ -66,9 +78,9 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           short="${GITHUB_SHA::7}"
-          gh release create "valuescout-$short" valuescout-mimik-*.zip \
+          gh release create "valuescout-$short" valuescout-*.zip \
             --repo "$GITHUB_REPOSITORY" \
             --target "$GITHUB_SHA" \
             --title "ValueScout build $short" \
-            --notes "Chrome extension built from \`valuescout\` at $short. Install steps: https://github.com/$GITHUB_REPOSITORY/blob/valuescout/VALUESCOUT.md" \
+            --notes "Built from \`valuescout\` at $short. Testers: install \`valuescout-mimik-$short.zip\` (steps: https://github.com/$GITHUB_REPOSITORY/blob/valuescout/VALUESCOUT.md). Chrome Web Store: upload \`valuescout-show-me-store-$short.zip\` (listing: https://github.com/$GITHUB_REPOSITORY/blob/valuescout/store/LISTING.md)." \
             --latest
