@@ -59,6 +59,13 @@ describe('ValueScout bridge', () => {
     expect(recorder.start).toHaveBeenCalledWith('https://valuescout.layer10.ai');
   });
 
+  it('answers a ping, with the recording only for the invite that started it', async () => {
+    expect(await send({ type: 'ping' })).toMatchObject({ ok: true, guideId: null });
+    await send({ type: 'start' });
+    expect(await send({ type: 'ping' })).toMatchObject({ ok: true, guideId: 'bridge-guide' });
+    expect(await send({ type: 'ping' }, otherInvite)).toMatchObject({ ok: true, guideId: null });
+  });
+
   it('refuses pages other than the interview page', async () => {
     const reply = await send({ type: 'start' }, 'https://valuescout.layer10.ai/#/org/org-1');
     expect(reply.error).toMatch(/interview page/);

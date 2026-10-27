@@ -54,6 +54,9 @@ export default defineConfig({
       default_locale: "en",
       // ValueScout spike: lets the interview page start a recording and take its steps.
       externally_connectable: { matches: ["https://valuescout.layer10.ai/*"] },
+      // Fixed public key, so every unpacked install has the extension id the ValueScout interview
+      // page expects (dcijdocmnoghlfppljeiclnjigefhodn). A Web Store listing assigns its own id.
+      ...(isFirefox ? {} : { key: "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAwgHHf6WroylaVXtF4D05H0wjqlvhHdY10RcPkDVwBkODzm5NGPQ8SVRZ1om9DpV8ka+5Rjf8tr9mNVDeCWhkyi/qdBVCIARhx+9FRRjlPEDFi+kps0dAhBbTqH5Bdv57l3xMizLdMLpf5Lk6cJkbNP2z8BPdBDJAqpFdjMXWsI6h0ldxuG1xV+HDNsaRYfqYpjPv0xR3Jzlf8lSpxnCeWzNjwtt09y8srYnQ+XWyWUM1KNHApkirBpt1nW3W0DdslMkVP2cRgnFp9zIJ1Hu2fOrpCUfccxivNXiQcKSBIevMMywOvsmM6xWS4f6kZS3FoR8c3iEYMNJx5pIblAzyfQIDAQAB" }),
       permissions: [
         "storage",
         "activeTab",

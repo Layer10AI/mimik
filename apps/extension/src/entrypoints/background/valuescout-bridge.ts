@@ -46,7 +46,11 @@ async function isOwnInvite(token: string): Promise<boolean> {
   return owned === (await inviteHash(token));
 }
 
-type BridgeMessage = { type: 'start' } | { type: 'take'; guideId: string; from: number } | { type: 'stop' };
+type BridgeMessage =
+  | { type: 'ping' }
+  | { type: 'start' }
+  | { type: 'take'; guideId: string; from: number }
+  | { type: 'stop' };
 
 async function blobToDataUrl(blob: Blob): Promise<string> {
   const bytes = new Uint8Array(await blob.arrayBuffer());
@@ -99,6 +103,13 @@ export function registerValueScoutBridge(recorder: Recorder): void {
     return { steps: await stepsFrom(guideId, from) };
   }
 
+  // Lets the page show its button, and pick a recording back up after a reload.
+  async function ping(token: string) {
+    const owned = await ownedGuide();
+    const recording = !!owned && recorder.current() === owned && (await isOwnInvite(token));
+    return { ok: true, version: browser.runtime.getManifest().version, guideId: recording ? owned : null };
+  }
+
   async function stop(token: string) {
     if (!(await isOwnInvite(token))) throw new Error('Not a recording this page started');
     const owned = await ownedGuide();
@@ -115,6 +126,7 @@ export function registerValueScoutBridge(recorder: Recorder): void {
     const url = sender.tab?.url ?? sender.url;
     const token = inviteToken(url);
     if (!token) return reply(Promise.reject(new Error('Only the interview page can record')));
+    if (message?.type === 'ping') return reply(ping(token));
     if (message?.type === 'start') return reply(start(url!, token));
     if (message?.type === 'take') return reply(take(message.guideId, message.from, token));
     if (message?.type === 'stop') return reply(stop(token));
