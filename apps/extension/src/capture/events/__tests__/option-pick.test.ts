@@ -37,7 +37,7 @@ function capturedSteps() {
   return vi
     .mocked(sendMessage)
     .mock.calls.filter(([type]) => type === 'captureStep')
-    .map(([, data]) => data as { action: string; elementMeta: { text?: string } });
+    .map(([, data]) => data as { action: string; elementMeta: { textContent?: string | null } });
 }
 
 async function settle(turns = 16) {
@@ -82,6 +82,16 @@ describe('picking from a list', () => {
     await settle();
 
     expect(capturedSteps()).toHaveLength(1);
+  });
+
+  it('names the option as it was when picked, not after the page changed it', async () => {
+    const page = place('<ul role="listbox"><li role="option">Banking</li></ul>');
+    const option = page.querySelector('[role=option]')!;
+    press(option);
+    option.textContent = 'Something else';
+    await settle();
+
+    expect(capturedSteps()[0]!.elementMeta.textContent).toBe('Banking');
   });
 
   it('only treats a click soon after the pick as the same pick', async () => {

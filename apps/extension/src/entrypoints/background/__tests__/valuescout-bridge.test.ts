@@ -22,7 +22,8 @@ vi.mock('@/core/screenshot/render', () => ({ renderScreenshot: vi.fn() }));
 
 import { endInterviewMode, registerValueScoutBridge } from '../valuescout-bridge';
 
-const interview = 'https://valuescout.layer10.ai/#/interview/secret-token';
+const interview = 'https://valuescout.layer10.ai/#/interview/3f2a9c1e-7b4d-4e8a-9c2f-1a2b3c4d5e6f';
+const otherInvite = 'https://valuescout.layer10.ai/#/interview/0b7e5d2c-1f3a-4c6b-8d9e-aa11bb22cc33';
 let current: string | null;
 const recorder = {
   start: vi.fn(async (_url: string) => {
@@ -86,6 +87,25 @@ describe('ValueScout bridge', () => {
       /interview page/,
     );
     expect(await stale({ type: 'start' }, interview)).toEqual({ guideId: 'bridge-guide' });
+  });
+
+  it('refuses an interview URL that is not a real invite', async () => {
+    const reply = await send({ type: 'start' }, 'https://valuescout.layer10.ai/#/interview/anything');
+    expect(reply.error).toMatch(/interview page/);
+    expect(recorder.start).not.toHaveBeenCalled();
+  });
+
+  it("a different invite can't read or stop this recording", async () => {
+    await send({ type: 'start' });
+    expect((await send({ type: 'take', guideId: 'bridge-guide', from: 0 }, otherInvite)).error).toMatch(/Not a guide/);
+    expect((await send({ type: 'stop' }, otherInvite)).error).toMatch(/Not a recording/);
+    expect(recorder.stop).not.toHaveBeenCalled();
+  });
+
+  it('keeps only a hash of the invite token', async () => {
+    await send({ type: 'start' });
+    const stored = JSON.stringify(await fakeBrowser.storage.session.get(null));
+    expect(stored).not.toContain('3f2a9c1e');
   });
 
   it("won't take over a recording the person started in Mimik", async () => {

@@ -3,7 +3,7 @@ import PQueue from 'p-queue';
 import { browser } from '#imports';
 import { extensionCaptureSink } from '@/capture/sink';
 import { extractDOMContext } from '@/core/capture/dom/context';
-import { extractElementMeta, freezeRect } from '@/core/capture/dom/element-meta';
+import { extractElementMeta, type FrozenRect, freezeRect } from '@/core/capture/dom/element-meta';
 import {
   eventTarget,
   findFocusableAncestor,
@@ -80,6 +80,8 @@ class CaptureController {
   // A list option picked on pointerdown; a click on it soon after is the same pick.
   private pickedOption: Element | null = null;
   private pickedAt = 0;
+  // The field whose typing step is queued but not started yet, so a keystroke can't queue a second one.
+  private inputStarting: HTMLElement | null = null;
   private readonly onSettingsChanged = (changes: Record<string, { newValue?: unknown }>) => {
     if (changes.recordKeys) this.recordKeys = changes.recordKeys.newValue === true;
     if (changes.recordTyping) this.recordTyping = changes.recordTyping.newValue !== false;
@@ -122,6 +124,9 @@ class CaptureController {
         })
         .catch(() => {});
     }
+    // Until this frame has read the settings, assume typed text is hidden: a frame that loads
+    // mid-interview must not record a value in its first moments.
+    hideTypedText(true);
     localStorage
       .get(['recordKeys', 'recordTyping', 'hideTypedText', 'interviewMode'])
       .then(({ recordKeys, recordTyping, hideTypedText: hideSetting, interviewMode }) => {
@@ -137,16 +142,20 @@ class CaptureController {
     }
   }
 
-  private capture(action: StepAction, target: HTMLElement, point?: { x: number; y: number }) {
+  // `now` reads the element's text and surroundings at once, for elements about to be removed
+  // (a picked list option): read later, a detached option loses the layout that spaces its lines.
+  private capture(action: StepAction, target: HTMLElement, point?: { x: number; y: number }, now = false) {
     const atEvent = freezeRect(target);
+    const read = () => ({ meta: extractElementMeta(target, atEvent), context: extractDOMContext(target, action) });
+    const early = now ? read() : null;
     return async () => {
       const placement = locateFrame();
-      const elementMeta = extractElementMeta(target, atEvent);
+      const { meta: elementMeta, context } = early ?? read();
       await this.sink.captureStep({
         guideId: this.guideId,
         action,
         elementMeta: placeInTab(point ? { ...elementMeta, clickPoint: point } : elementMeta, await placement),
-        domContext: extractDOMContext(target, action),
+        domContext: context,
       });
     };
   }
@@ -205,11 +214,7 @@ class CaptureController {
     lastClickTime = now;
 
     if (isTextField(target)) {
-      const atEvent = freezeRect(target);
-      this.enqueue(async () => {
-        if (this.input.active && this.input.target !== target) await this.input.finalize();
-        if (!this.input.active) await this.input.start(target, atEvent);
-      });
+      this.startInput(target, freezeRect(target));
       return;
     }
 
@@ -296,15 +301,26 @@ class CaptureController {
     if (target instanceof HTMLInputElement && (target.type === 'checkbox' || target.type === 'radio')) return;
     if (!this.recordTyping) return;
 
-    if (this.input.active && this.input.target !== target) {
-      this.enqueue(() => this.input.finalize());
-    }
-
-    if (!this.input.active) {
-      this.enqueue(() => this.input.start(target));
-    } else {
+    if (this.inputStarting === target) {
+      this.enqueue(async () => this.input.update(target));
+    } else if (this.input.active && this.input.target === target) {
       this.input.update(target);
+    } else {
+      this.startInput(target);
     }
+  }
+
+  private startInput(target: HTMLElement, atEvent?: FrozenRect) {
+    if (this.inputStarting === target || (this.input.active && this.input.target === target)) return;
+    this.inputStarting = target;
+    this.enqueue(async () => {
+      try {
+        if (this.input.active && this.input.target !== target) await this.input.finalize();
+        if (!this.input.active) await this.input.start(target, atEvent);
+      } finally {
+        if (this.inputStarting === target) this.inputStarting = null;
+      }
+    });
   }
 
   private onFocusOut(e: Event) {
@@ -335,7 +351,7 @@ class CaptureController {
     if (pe.button !== 0 || !(option instanceof HTMLElement) || isMimikElement(option)) return;
     this.pickedOption = option;
     this.pickedAt = Date.now();
-    this.enqueue(this.capture('click', option, { x: pe.clientX, y: pe.clientY }));
+    this.enqueue(this.capture('click', option, { x: pe.clientX, y: pe.clientY }, true));
   }
 
   private onPointerUp(e: Event) {

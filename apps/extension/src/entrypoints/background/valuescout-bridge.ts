@@ -21,12 +21,29 @@ async function ownedGuide(): Promise<string | undefined> {
   return (await browser.storage.session.get(ownedGuideKey))[ownedGuideKey] as string | undefined;
 }
 
-function isInterviewPage(url: string | undefined): boolean {
+// The invite token from an interview page URL (#/interview/<uuid>), or null for any other page.
+function inviteToken(url: string | undefined): string | null {
   try {
-    return new URL(url ?? '').hash.startsWith('#/interview/');
+    const match = /^#\/interview\/([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})(?:[/?]|$)/i.exec(
+      new URL(url ?? '').hash,
+    );
+    return match ? match[1]!.toLowerCase() : null;
   } catch {
-    return false;
+    return null;
   }
+}
+
+// A recording belongs to the invite that started it. Only a hash of the token is kept.
+const ownedInviteKey = 'valuescoutBridgeInvite';
+
+async function inviteHash(token: string): Promise<string> {
+  const digest = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(token));
+  return Array.from(new Uint8Array(digest), (b) => b.toString(16).padStart(2, '0')).join('');
+}
+
+async function isOwnInvite(token: string): Promise<boolean> {
+  const owned = (await browser.storage.session.get(ownedInviteKey))[ownedInviteKey];
+  return owned === (await inviteHash(token));
 }
 
 type BridgeMessage = { type: 'start' } | { type: 'take'; guideId: string; from: number } | { type: 'stop' };
@@ -60,7 +77,7 @@ async function stepsFrom(guideId: string, from: number) {
 }
 
 export function registerValueScoutBridge(recorder: Recorder): void {
-  async function start(url: string) {
+  async function start(url: string, token: string) {
     if (recorder.current()) throw new Error('Mimik is already recording');
     // Only the origin: the interview URL carries the invite token, and Mimik keeps the start URL with the guide.
     // Interview mode: typed text stays out of steps and stored URLs lose their query and hash.
@@ -72,16 +89,18 @@ export function registerValueScoutBridge(recorder: Recorder): void {
       await endInterviewMode();
       throw err;
     }
-    await browser.storage.session.set({ [ownedGuideKey]: guideId });
+    await browser.storage.session.set({ [ownedGuideKey]: guideId, [ownedInviteKey]: await inviteHash(token) });
     return { guideId };
   }
 
-  async function take(guideId: string, from: number) {
-    if (guideId !== (await ownedGuide())) throw new Error('Not a guide this page started');
+  async function take(guideId: string, from: number, token: string) {
+    if (guideId !== (await ownedGuide()) || !(await isOwnInvite(token)))
+      throw new Error('Not a guide this page started');
     return { steps: await stepsFrom(guideId, from) };
   }
 
-  async function stop() {
+  async function stop(token: string) {
+    if (!(await isOwnInvite(token))) throw new Error('Not a recording this page started');
     const owned = await ownedGuide();
     if (owned && recorder.current() === owned) await recorder.stop();
     return { stopped: true };
@@ -94,10 +113,11 @@ export function registerValueScoutBridge(recorder: Recorder): void {
     };
     // sender.url is the URL the page loaded with; the tab's URL follows in-app hash navigation.
     const url = sender.tab?.url ?? sender.url;
-    if (!isInterviewPage(url)) return reply(Promise.reject(new Error('Only the interview page can record')));
-    if (message?.type === 'start') return reply(start(url!));
-    if (message?.type === 'take') return reply(take(message.guideId, message.from));
-    if (message?.type === 'stop') return reply(stop());
+    const token = inviteToken(url);
+    if (!token) return reply(Promise.reject(new Error('Only the interview page can record')));
+    if (message?.type === 'start') return reply(start(url!, token));
+    if (message?.type === 'take') return reply(take(message.guideId, message.from, token));
+    if (message?.type === 'stop') return reply(stop(token));
     return false;
   });
 }
