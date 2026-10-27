@@ -5,10 +5,12 @@ on:
     branches:
       - main
       - dev
+      - valuescout
   push:
     branches:
       - main
       - dev
+      - valuescout
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}

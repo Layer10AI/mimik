@@ -1,0 +1,74 @@
+# ValueScout fork: builds the Chrome extension zip for every PR into `valuescout` (as a workflow
+# artifact) and, on each merge, publishes it as a GitHub release testers can install from.
+name: ValueScout build
+
+on:
+  pull_request:
+    branches:
+      - valuescout
+  push:
+    branches:
+      - valuescout
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    name: Build extension zip
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - uses: pnpm/action-setup@ea17c68df8912ef543352723c149a84f56e3d413 # v6.1.0
+
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: "22"
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile
+
+      - name: Build Chrome
+        run: pnpm build
+
+      - name: Zip
+        run: |
+          cd apps/extension/.output/chrome-mv3
+          zip -qr "$GITHUB_WORKSPACE/valuescout-mimik-${GITHUB_SHA::7}.zip" .
+
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: valuescout-mimik
+          path: valuescout-mimik-*.zip
+          if-no-files-found: error
+
+  release:
+    name: Publish release
+    if: github.event_name == 'push'
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          name: valuescout-mimik
+
+      - name: Create release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          short="${GITHUB_SHA::7}"
+          gh release create "valuescout-$short" valuescout-mimik-*.zip \
+            --repo "$GITHUB_REPOSITORY" \
+            --target "$GITHUB_SHA" \
+            --title "ValueScout build $short" \
+            --notes "Chrome extension built from \`valuescout\` at $short. Install steps: https://github.com/$GITHUB_REPOSITORY/blob/valuescout/VALUESCOUT.md" \
+            --latest
