@@ -1,3 +1,4 @@
+import { i18n } from '@mimik/core/env';
 import { type ReactNode, useState } from 'react';
 import type { ValidateKey } from '../../ai/types';
 import { MascotIcon } from '../../common/components/MascotIcon';
@@ -36,7 +37,7 @@ export function OnboardingFlow({
     <div className="flex min-h-screen flex-col bg-background text-foreground">
       <header className="flex items-center gap-2 px-6 pt-5 text-[17px] font-bold">
         <MascotIcon size={32} />
-        Mimik
+        {i18n.t('app.name')}
       </header>
       <main
         className={`mx-auto flex w-full flex-1 flex-col justify-center gap-3.5 px-4 py-6 ${step === 3 ? 'max-w-[1040px]' : 'max-w-[640px]'}`}

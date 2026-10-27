@@ -68,7 +68,7 @@ export function PinCard() {
           </p>
           <div className="flex items-center gap-2 rounded-md bg-secondary px-1 py-1.5">
             <MascotIcon size={20} />
-            Mimik
+            {i18n.t('app.name')}
             <span className="ml-auto flex items-center gap-1.5">
               <span className="flex size-[18px] items-center justify-center rounded-full bg-primary text-[10px] font-bold text-white">
                 2
