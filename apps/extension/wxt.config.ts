@@ -52,6 +52,8 @@ export default defineConfig({
       name: "__MSG_app_store_title__",
       description: "__MSG_app_description__",
       default_locale: "en",
+      // ValueScout spike: lets the interview page start a recording and take its steps.
+      externally_connectable: { matches: ["https://valuescout.layer10.ai/*"] },
       permissions: [
         "storage",
         "activeTab",

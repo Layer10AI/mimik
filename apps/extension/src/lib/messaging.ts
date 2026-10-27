@@ -12,7 +12,7 @@ import type {
 } from '@/core/capture/sink';
 import type { VoiceoverProviderKey } from '@/core/export/voiceover/providers';
 
-interface StartRecordingData {
+export interface StartRecordingData {
   url: string;
   insertTargetGuideId?: string;
   insertAtIndex?: number;

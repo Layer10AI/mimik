@@ -6,6 +6,7 @@ import { generateDescriptionOnDemand } from '@/core/capture/ai/guide-description
 import { mergeRecording } from '@/core/capture/ai/merge-recording';
 import { rewriteSelection } from '@/core/capture/ai/rewrite';
 import { validateApiKey } from '@/core/capture/ai/validate';
+import { isLive } from '@/core/capture/is-live';
 import { stepRequiresManual } from '@/core/guideme/manual';
 import { advanceSession, cancelSession, completeSession, getSession, startSession } from '@/core/guideme/session';
 import { actionSteps } from '@/core/guides/blocks';
@@ -24,7 +25,7 @@ import { setSidePanelBehavior } from '@/lib/browser-api/set-side-panel-behavior'
 import { toggleSidebar } from '@/lib/browser-api/toggle-sidebar';
 import { updateTab } from '@/lib/browser-api/update-tab';
 import { recordInstall } from '@/lib/letter-notice/record-install';
-import { onMessage } from '@/lib/messaging';
+import { onMessage, type StartRecordingData } from '@/lib/messaging';
 import { broadcastStateToPanel } from '@/lib/port/broadcast-state-to-panel';
 import { setupPortListener } from '@/lib/port/setup-port-listener';
 import { TabMessage } from '@/lib/tab-messages';
@@ -42,6 +43,7 @@ import {
   isInjectableTab,
   showNotificationOnTab,
 } from './tab-manager';
+import { registerValueScoutBridge } from './valuescout-bridge';
 import {
   abortVoiceNarration,
   canStartNarrationNow,
@@ -126,7 +128,7 @@ export default defineBackground(() => {
     return getStateUpdate();
   });
 
-  onMessage('startRecording', async ({ data }) => {
+  async function startRecording(data: StartRecordingData) {
     await waitUntilReady();
     const actor = getActor();
     actor.send({
@@ -146,9 +148,10 @@ export default defineBackground(() => {
 
     await broadcastAttachCapture(guideId);
     return { guideId };
-  });
+  }
+  onMessage('startRecording', ({ data }) => startRecording(data));
 
-  onMessage('stopRecording', async () => {
+  async function stopRecording() {
     await waitUntilReady();
     await whenPauseSettled();
     const actor = getActor();
@@ -170,6 +173,15 @@ export default defineBackground(() => {
     }
 
     return { success: true, guideId: guideId ?? undefined, inserted: false };
+  }
+  onMessage('stopRecording', stopRecording);
+  registerValueScoutBridge({
+    start: (url) => startRecording({ url }),
+    stop: stopRecording,
+    current: () => {
+      const snap = getActor().getSnapshot();
+      return isLive(snap.value) ? snap.context.currentGuideId : null;
+    },
   });
 
   onMessage('discardRecording', async () => {

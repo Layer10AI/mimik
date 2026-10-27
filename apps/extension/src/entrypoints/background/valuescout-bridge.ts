@@ -1,0 +1,94 @@
+import { browser } from '#imports';
+import { actionSteps } from '@/core/guides/blocks';
+import { getScreenshotsForSteps, getStepsForGuide } from '@/core/guides/service';
+import { renderScreenshot } from '@/core/screenshot/render';
+
+// ValueScout spike: the interview page drives a recording over externally_connectable with
+// one-shot messages, so a service worker restart mid-recording loses nothing. The page keeps
+// the guide id and how many steps it has taken; the guide also stays in Mimik's library.
+interface Recorder {
+  start(url: string): Promise<{ guideId: string }>;
+  stop(): Promise<unknown>;
+  /** The guide being recorded right now, or null. */
+  current(): string | null;
+}
+
+// The guide this bridge started. Pages may only read or stop that one, never the person's own guides.
+const ownedGuideKey = 'valuescoutBridgeGuideId';
+
+async function ownedGuide(): Promise<string | undefined> {
+  return (await browser.storage.session.get(ownedGuideKey))[ownedGuideKey] as string | undefined;
+}
+
+function isInterviewPage(url: string | undefined): boolean {
+  try {
+    return new URL(url ?? '').hash.startsWith('#/interview/');
+  } catch {
+    return false;
+  }
+}
+
+type BridgeMessage = { type: 'start' } | { type: 'take'; guideId: string; from: number } | { type: 'stop' };
+
+async function blobToDataUrl(blob: Blob): Promise<string> {
+  const bytes = new Uint8Array(await blob.arrayBuffer());
+  let binary = '';
+  for (let i = 0; i < bytes.length; i += 0x8000) binary += String.fromCharCode(...bytes.subarray(i, i + 0x8000));
+  return `data:${blob.type};base64,${btoa(binary)}`;
+}
+
+async function stepsFrom(guideId: string, from: number) {
+  const steps = actionSteps(await getStepsForGuide(guideId)).slice(from);
+  const screenshots = await getScreenshotsForSteps(
+    steps.flatMap((step) => (step.screenshotId ? [step.screenshotId] : [])),
+  );
+  return Promise.all(
+    steps.map(async (step) => {
+      const shot = screenshots.get(step.id);
+      // No step.url: on the interview page it carries the invite token.
+      // The whole frame, not Mimik's zoomed crop: Vera needs the page around the click.
+      const viewport = shot && { x: 0, y: 0, width: shot.width, height: shot.height };
+      const blob = shot?.blob ? await renderScreenshot(shot, { format: 'image/jpeg', quality: 0.85, viewport }) : null;
+      return {
+        text: step.description,
+        takenAt: step.timestamp,
+        dataUrl: blob && (await blobToDataUrl(blob)),
+      };
+    }),
+  );
+}
+
+export function registerValueScoutBridge(recorder: Recorder): void {
+  async function start(url: string) {
+    if (recorder.current()) throw new Error('Mimik is already recording');
+    // Only the origin: the interview URL carries the invite token, and Mimik keeps the start URL with the guide.
+    const { guideId } = await recorder.start(new URL(url).origin);
+    await browser.storage.session.set({ [ownedGuideKey]: guideId });
+    return { guideId };
+  }
+
+  async function take(guideId: string, from: number) {
+    if (guideId !== (await ownedGuide())) throw new Error('Not a guide this page started');
+    return { steps: await stepsFrom(guideId, from) };
+  }
+
+  async function stop() {
+    const owned = await ownedGuide();
+    if (owned && recorder.current() === owned) await recorder.stop();
+    return { stopped: true };
+  }
+
+  browser.runtime.onMessageExternal.addListener((message: BridgeMessage, sender, sendResponse) => {
+    const reply = (work: Promise<unknown>) => {
+      work.then(sendResponse, (err: unknown) => sendResponse({ error: String(err) }));
+      return true;
+    };
+    // sender.url is the URL the page loaded with; the tab's URL follows in-app hash navigation.
+    const url = sender.tab?.url ?? sender.url;
+    if (!isInterviewPage(url)) return reply(Promise.reject(new Error('Only the interview page can record')));
+    if (message?.type === 'start') return reply(start(url!));
+    if (message?.type === 'take') return reply(take(message.guideId, message.from));
+    if (message?.type === 'stop') return reply(stop());
+    return false;
+  });
+}
