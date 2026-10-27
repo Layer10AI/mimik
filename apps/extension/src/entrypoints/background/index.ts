@@ -149,7 +149,11 @@ export default defineBackground(() => {
     await broadcastAttachCapture(guideId);
     return { guideId };
   }
-  onMessage('startRecording', ({ data }) => startRecording(data));
+  // A recording started from Mimik's own panel is never an interview, whatever a crash left behind.
+  onMessage('startRecording', async ({ data }) => {
+    await endInterviewMode();
+    return startRecording(data);
+  });
 
   async function stopRecording() {
     await waitUntilReady();

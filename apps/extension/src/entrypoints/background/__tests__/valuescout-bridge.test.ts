@@ -71,6 +71,12 @@ describe('ValueScout bridge', () => {
     expect((await fakeBrowser.storage.local.get('interviewMode')).interviewMode).toBe(false);
   });
 
+  it('turns interview mode back off when the recording fails to start', async () => {
+    recorder.start.mockRejectedValueOnce(new Error('no tab'));
+    expect((await send({ type: 'start' })).error).toMatch(/no tab/);
+    expect((await fakeBrowser.storage.local.get('interviewMode')).interviewMode).toBe(false);
+  });
+
   it("checks the tab's current URL, not the one the page loaded with", async () => {
     const stale = (message: unknown, tabUrl: string) =>
       new Promise<Record<string, unknown>>((resolve) =>

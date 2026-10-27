@@ -84,6 +84,18 @@ describe('picking from a list', () => {
     expect(capturedSteps()).toHaveLength(1);
   });
 
+  it('only treats a click soon after the pick as the same pick', async () => {
+    const page = place('<div role="option"><button>Open</button></div>');
+    const button = page.querySelector('button')!;
+    const now = vi.spyOn(Date, 'now').mockReturnValue(1_000_000);
+    press(button);
+    now.mockReturnValue(1_005_000);
+    click(button);
+    await settle();
+
+    expect(capturedSteps()).toHaveLength(2);
+  });
+
   it('leaves ordinary buttons to the click handler', async () => {
     const page = place('<button>Save</button>');
     const button = page.querySelector('button')!;

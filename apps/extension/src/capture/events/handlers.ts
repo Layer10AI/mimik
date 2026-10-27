@@ -77,8 +77,9 @@ class CaptureController {
   private recordKeys = false;
   private recordTyping = true;
   private hideTyped = { setting: false, interview: false };
-  // A list option picked on pointerdown; the click that may follow is the same pick.
+  // A list option picked on pointerdown; a click on it soon after is the same pick.
   private pickedOption: Element | null = null;
+  private pickedAt = 0;
   private readonly onSettingsChanged = (changes: Record<string, { newValue?: unknown }>) => {
     if (changes.recordKeys) this.recordKeys = changes.recordKeys.newValue === true;
     if (changes.recordTyping) this.recordTyping = changes.recordTyping.newValue !== false;
@@ -194,10 +195,9 @@ class CaptureController {
     if (!raw || !(raw instanceof Element) || isReplayedClick(me) || me.shiftKey) return;
     const target = findFocusableAncestor(raw);
     if (isMimikElement(target)) return;
-    if (this.pickedOption?.contains(target)) {
-      this.pickedOption = null;
-      return;
-    }
+    const samePick = this.pickedOption?.contains(target) && Date.now() - this.pickedAt < REPEAT_CLICK_MS * 3;
+    this.pickedOption = null;
+    if (samePick) return;
 
     const now = Date.now();
     if (target === lastClickTarget && now - lastClickTime < REPEAT_CLICK_MS) return;
@@ -334,6 +334,7 @@ class CaptureController {
     this.pickedOption = null;
     if (pe.button !== 0 || !(option instanceof HTMLElement) || isMimikElement(option)) return;
     this.pickedOption = option;
+    this.pickedAt = Date.now();
     this.enqueue(this.capture('click', option, { x: pe.clientX, y: pe.clientY }));
   }
 

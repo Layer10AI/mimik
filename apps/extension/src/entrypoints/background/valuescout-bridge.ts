@@ -65,7 +65,13 @@ export function registerValueScoutBridge(recorder: Recorder): void {
     // Only the origin: the interview URL carries the invite token, and Mimik keeps the start URL with the guide.
     // Interview mode: typed text stays out of steps and stored URLs lose their query and hash.
     await localStorage.set({ interviewMode: true });
-    const { guideId } = await recorder.start(new URL(url).origin);
+    let guideId: string;
+    try {
+      ({ guideId } = await recorder.start(new URL(url).origin));
+    } catch (err) {
+      await endInterviewMode();
+      throw err;
+    }
     await browser.storage.session.set({ [ownedGuideKey]: guideId });
     return { guideId };
   }
