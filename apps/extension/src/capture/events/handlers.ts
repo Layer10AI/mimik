@@ -75,6 +75,8 @@ class CaptureController {
   private busy = false;
   private recordKeys = false;
   private recordTyping = true;
+  // A list option picked on pointerdown; the click that may follow is the same pick.
+  private pickedOption: Element | null = null;
   private readonly onSettingsChanged = (changes: Record<string, { newValue?: unknown }>) => {
     if (changes.recordKeys) this.recordKeys = changes.recordKeys.newValue === true;
     if (changes.recordTyping) this.recordTyping = changes.recordTyping.newValue !== false;
@@ -184,6 +186,10 @@ class CaptureController {
     if (!raw || !(raw instanceof Element) || isReplayedClick(me) || me.shiftKey) return;
     const target = findFocusableAncestor(raw);
     if (isMimikElement(target)) return;
+    if (this.pickedOption?.contains(target)) {
+      this.pickedOption = null;
+      return;
+    }
 
     const now = Date.now();
     if (target === lastClickTarget && now - lastClickTime < REPEAT_CLICK_MS) return;
@@ -313,6 +319,14 @@ class CaptureController {
     this.dragStartX = pe.pageX;
     this.dragStartY = pe.pageY;
     this.dragStartElement = eventTarget(pe);
+
+    // Comboboxes commit a pick on pointerdown and unmount the list, so no click ever
+    // reaches the option. Record the pick here instead.
+    const option = this.dragStartElement instanceof Element ? this.dragStartElement.closest('[role=option]') : null;
+    this.pickedOption = null;
+    if (pe.button !== 0 || !(option instanceof HTMLElement) || isMimikElement(option)) return;
+    this.pickedOption = option;
+    this.enqueue(this.capture('click', option, { x: pe.clientX, y: pe.clientY }));
   }
 
   private onPointerUp(e: Event) {
