@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.0.1](https://github.com/westpoint-io/mimik/compare/desktop-v1.0.0...desktop-v1.0.1) (2026-10-27)
+
+
+### Bug Fixes
+
+* **i18n:** fit the russian store description in 132 characters ([#196](https://github.com/westpoint-io/mimik/issues/196)) ([890b6dc](https://github.com/westpoint-io/mimik/commit/890b6dc5a966833562ce24bf7012b4d9dc6b7557))
+
 ## 1.0.0 (2026-10-26)
 
 The first public release of Mimik Desktop, for Windows.
