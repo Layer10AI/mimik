@@ -44,6 +44,8 @@ export default defineConfig({
   },
   vite: () => ({
     plugins: [tailwindcss()],
+    // Read by ValueScoutMark: the store build swaps Mimik's mascot for ValueScout's mark.
+    define: { __VALUESCOUT_STORE__: JSON.stringify(store) },
   }),
   hooks: {
     // The store build shows its own name wherever the interface would say Mimik.
@@ -52,7 +54,16 @@ export default defineConfig({
       const locales = join(wxt.config.outDir, "_locales");
       for (const locale of readdirSync(locales)) {
         const file = join(locales, locale, "messages.json");
-        writeFileSync(file, readFileSync(file, "utf8").replaceAll("Mimik", storeName));
+        // Only the shown text: message keys (like onboarding_openMimik) must stay valid identifiers.
+        const messages: Record<string, { message: string }> = JSON.parse(readFileSync(file, "utf8"));
+        for (const entry of Object.values(messages)) entry.message = entry.message.replaceAll("Mimik", storeName);
+        writeFileSync(file, JSON.stringify(messages));
+      }
+      // Page titles show in the tab when onboarding or the side panel opens as a page.
+      for (const page of readdirSync(wxt.config.outDir, { recursive: true }).map(String)) {
+        if (!page.endsWith(".html")) continue;
+        const file = join(wxt.config.outDir, page);
+        writeFileSync(file, readFileSync(file, "utf8").replace(/<title>([^<]*)<\/title>/, (_, title: string) => `<title>${title.replaceAll("Mimik", storeName)}</title>`));
       }
     },
     'build:manifestGenerated': (wxt, manifest) => {

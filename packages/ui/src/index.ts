@@ -11,12 +11,14 @@ export { FaviconImg } from './common/components/FaviconImg';
 export { GitHubCard } from './common/components/GitHubCard';
 export { MascotIcon } from './common/components/MascotIcon';
 export { SavedBadge } from './common/components/SavedBadge';
+export { ScoutMascot } from './common/components/ScoutMascot';
 export { Segmented } from './common/components/Segmented';
 export { SettingsCard } from './common/components/SettingsCard';
 export { Switch } from './common/components/Switch';
 export { UpdateNotice } from './common/components/UpdateNotice';
 export { useSavedFlash } from './common/hooks/use-saved-flash';
 export { formatRelativeTime } from './common/lib/format-relative-time';
+export { valuescoutStoreBuild } from './common/lib/store-build';
 export { Button } from './components/ui/button';
 export {
   Dialog,

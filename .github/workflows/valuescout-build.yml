@@ -50,6 +50,18 @@ jobs:
           VALUESCOUT_STORE: "1"
         run: pnpm build
 
+      - name: Check the store package's locale keys
+        # Chrome refuses to load an extension whose message keys aren't plain identifiers.
+        run: |
+          node -e '
+            const fs = require("fs");
+            const dir = "apps/extension/.output/chrome-mv3/_locales";
+            const bad = fs.readdirSync(dir).flatMap((l) =>
+              Object.keys(JSON.parse(fs.readFileSync(`${dir}/${l}/messages.json`, "utf8")))
+                .filter((k) => !/^[A-Za-z0-9_]+$/.test(k)).map((k) => `${l}: ${k}`));
+            if (bad.length) { console.error("Invalid message keys:\n" + bad.join("\n")); process.exit(1); }
+          '
+
       - name: Zip store package
         run: |
           cd apps/extension/.output/chrome-mv3

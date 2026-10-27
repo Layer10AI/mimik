@@ -1,4 +1,14 @@
+import { ScoutMascot } from '../../common/components/ScoutMascot';
+import { valuescoutStoreBuild } from '../../common/lib/store-build';
+
 export function MimikEyes() {
+  if (valuescoutStoreBuild) {
+    return (
+      <div className="w-full h-full flex items-center justify-center bg-primary">
+        <ScoutMascot size={72} lively />
+      </div>
+    );
+  }
   return (
     <div className="w-full h-full flex items-center justify-center bg-primary">
       <svg width="120" height="50" viewBox="0 0 120 50" fill="none">
