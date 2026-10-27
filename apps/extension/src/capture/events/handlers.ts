@@ -62,6 +62,8 @@ export interface CaptureHandle {
 }
 
 const PASSIVE_CAPTURE = { capture: true, passive: true } as const;
+// Hosts that serve the ValueScout interview page (see externally_connectable in wxt.config.ts).
+const interviewHosts = new Set(['valuescout.layer10.ai', 'localhost:5173']);
 const ACTIVE_CAPTURE = { capture: true } as const;
 
 class CaptureController {
@@ -137,9 +139,22 @@ class CaptureController {
       })
       .catch(() => {});
     browser.storage.local.onChanged.addListener(this.onSettingsChanged);
+    // In a ValueScout interview, the interview page itself is never recorded: its own buttons
+    // (Stop recording, Send) are not part of the work being shown.
+    this.listeners = this.listeners.map(([event, handler, opts]) => [
+      event,
+      (e: Event) => {
+        if (!this.onInterviewPage()) handler(e);
+      },
+      opts,
+    ]);
     for (const [event, handler, opts] of this.listeners) {
       window.addEventListener(event, handler, opts);
     }
+  }
+
+  private onInterviewPage(): boolean {
+    return this.hideTyped.interview && interviewHosts.has(location.host) && location.hash.startsWith('#/interview/');
   }
 
   // `now` reads the element's text and surroundings at once, for elements about to be removed
