@@ -1,4 +1,4 @@
-import { PRESET_LABELS, type PresetKey } from '@mimik/core/blur/patterns';
+import { DEFAULT_PRESETS, PRESET_LABELS, type PresetKey } from '@mimik/core/blur/patterns';
 import { i18n } from '@mimik/core/env';
 import type { VoiceoverProviderKey } from '@mimik/core/export/voiceover/providers';
 import {
@@ -34,14 +34,7 @@ export function SettingsView({ onBack, layout = 'column' }: SettingsViewProps) {
   const [recordKeys, setRecordKeys] = useState(false);
   const [recordTyping, setRecordTyping] = useState(true);
   const [hideTypedText, setHideTypedText] = useState(false);
-  const [blurPresets, setBlurPresets] = useState<Record<PresetKey, boolean>>({
-    email: true,
-    phone: true,
-    ssn: false,
-    creditCard: false,
-    ipAddress: false,
-    macAddress: false,
-  });
+  const [blurPresets, setBlurPresets] = useState<Record<PresetKey, boolean>>(DEFAULT_PRESETS);
 
   useEffect(() => {
     localStorage.get(['blurPresets', 'recordKeys', 'recordTyping', 'hideTypedText']).then((result) => {

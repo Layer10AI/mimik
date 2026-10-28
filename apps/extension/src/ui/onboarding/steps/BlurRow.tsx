@@ -1,7 +1,7 @@
 import { OnboardingRow, Switch } from '@mimik/ui';
 import { useEffect, useState } from 'react';
 import { i18n } from '#imports';
-import { PRESET_LABELS, type PresetKey } from '@/core/blur/patterns';
+import { DEFAULT_PRESETS, PRESET_LABELS, type PresetKey } from '@/core/blur/patterns';
 import { localStorage } from '@/lib/browser-api/local-storage';
 import { BlurPicture } from './BlurPicture';
 
@@ -14,17 +14,8 @@ const PRESET_I18N: Record<PresetKey, string> = {
   macAddress: 'blurPresets.macAddress',
 };
 
-const DEFAULTS: Record<PresetKey, boolean> = {
-  email: true,
-  phone: true,
-  ssn: false,
-  creditCard: false,
-  ipAddress: false,
-  macAddress: false,
-};
-
 export function BlurRow() {
-  const [presets, setPresets] = useState(DEFAULTS);
+  const [presets, setPresets] = useState(DEFAULT_PRESETS);
   const keys = Object.keys(PRESET_LABELS) as PresetKey[];
   const on = keys.some((key) => presets[key]);
 
@@ -51,7 +42,11 @@ export function BlurRow() {
           checked={on}
           label={i18n.t('onboarding.blurTitle')}
           onChange={(next) =>
-            save(next ? DEFAULTS : (Object.fromEntries(keys.map((key) => [key, false])) as Record<PresetKey, boolean>))
+            save(
+              next
+                ? DEFAULT_PRESETS
+                : (Object.fromEntries(keys.map((key) => [key, false])) as Record<PresetKey, boolean>),
+            )
           }
         />
       }
