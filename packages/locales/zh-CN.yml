@@ -664,6 +664,7 @@ steps:
   pressKey: '在“$2”上按 $1'
   toggleCheckbox: '切换“$1”'
   select: '选择“$1”'
+  selectIn: '在“$2”中选择“$1”'
   enter: '在“$1”中输入'
   toggleSwitch: '切换“$1”'
   clickLink: '点击链接“$1”'

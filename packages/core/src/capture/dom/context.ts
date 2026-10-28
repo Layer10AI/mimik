@@ -66,14 +66,17 @@ function getLabelForInput(el: Element): string | null {
   return textOf(clone);
 }
 
-function getAccessibleName(el: Element): string | null {
+export function getAccessibleName(el: Element): string | null {
   return (
     attr(el, 'aria-label') ??
     resolveAriaLabelledBy(el) ??
     (el instanceof HTMLInputElement || el instanceof HTMLTextAreaElement || el instanceof HTMLSelectElement
       ? getLabelForInput(el)
       : null) ??
-    ((el.textContent?.trim()?.length ?? 0) <= 80 ? el.textContent?.trim() || null : null) ??
+    // A select's text is its option list, which names nothing.
+    (!(el instanceof HTMLSelectElement) && (el.textContent?.trim()?.length ?? 0) <= 80
+      ? el.textContent?.trim() || null
+      : null) ??
     attr(el, 'title') ??
     attr(el, 'placeholder')
   );

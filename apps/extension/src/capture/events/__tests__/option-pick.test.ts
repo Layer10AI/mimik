@@ -5,8 +5,9 @@ import { type CaptureHandle, startCapture } from '../handlers';
 
 vi.mock('@/lib/messaging', () => ({ sendMessage: vi.fn(), onMessage: vi.fn() }));
 
+const { settings } = vi.hoisted(() => ({ settings: { value: {} as Record<string, unknown> } }));
 vi.mock('@/lib/browser-api/local-storage', () => ({
-  localStorage: { get: vi.fn().mockResolvedValue({}), set: vi.fn().mockResolvedValue(undefined) },
+  localStorage: { get: vi.fn(async () => settings.value), set: vi.fn().mockResolvedValue(undefined) },
 }));
 
 let handle: CaptureHandle;
@@ -37,7 +38,9 @@ function capturedSteps() {
   return vi
     .mocked(sendMessage)
     .mock.calls.filter(([type]) => type === 'captureStep')
-    .map(([, data]) => data as { action: string; elementMeta: { textContent?: string | null } });
+    .map(
+      ([, data]) => data as { action: string; elementMeta: { textContent?: string | null; ariaLabel?: string | null } },
+    );
 }
 
 async function settle(turns = 16) {
@@ -45,6 +48,7 @@ async function settle(turns = 16) {
 }
 
 beforeEach(() => {
+  settings.value = {};
   document.body.innerHTML = '';
   vi.stubGlobal('requestAnimationFrame', (cb: FrameRequestCallback) => {
     setTimeout(() => cb(0), 0);
@@ -116,5 +120,64 @@ describe('picking from a list', () => {
     click(button);
     await settle();
     expect(capturedSteps()).toHaveLength(1);
+  });
+});
+
+const GL_ACCOUNT = `<label for="gl">GL account</label>
+  <select id="gl">
+    <option value="">Choose a GL account</option>
+    <option value="6100">6100 · Office supplies</option>
+  </select>`;
+
+// What a browser fires when a pick is committed from a select's list.
+function pickOption(select: HTMLSelectElement, value: string) {
+  select.value = value;
+  select.dispatchEvent(new Event('input', { bubbles: true }));
+  select.dispatchEvent(new Event('change', { bubbles: true }));
+}
+
+describe('picking from a native select', () => {
+  it('records one step naming the option and the field, with the click that opened it absorbed', async () => {
+    const page = place(GL_ACCOUNT);
+    const select = page.querySelector('select')!;
+    press(select);
+    click(select);
+    pickOption(select, '6100');
+    await settle();
+
+    expect(capturedSteps()).toHaveLength(1);
+    expect(capturedSteps()[0]!.action).toBe('input');
+    expect(capturedSteps()[0]!.elementMeta.textContent).toBe('6100 · Office supplies');
+    expect(capturedSteps()[0]!.elementMeta.ariaLabel).toBe('GL account');
+  });
+
+  it('records nothing when the select is opened and no pick follows', async () => {
+    const page = place(GL_ACCOUNT);
+    click(page.querySelector('select')!);
+    await settle();
+
+    expect(capturedSteps()).toHaveLength(0);
+  });
+
+  it('still names the option in an interview, while typed text stays out of steps', async () => {
+    settings.value = { interviewMode: true };
+    handle.stop();
+    handle = startCapture('guide-1');
+    const page = place(`${GL_ACCOUNT}<input type="text" aria-label="Vendor">`);
+    const select = page.querySelector('select')!;
+    const vendor = page.querySelector('input')!;
+    await settle();
+
+    pickOption(select, '6100');
+    for (const value of ['Acme', 'Acme Bank']) {
+      vendor.value = value;
+      vendor.dispatchEvent(new Event('input', { bubbles: true }));
+    }
+    await settle();
+
+    expect(capturedSteps()[0]!.elementMeta.textContent).toBe('6100 · Office supplies');
+    const typing = vi.mocked(sendMessage).mock.calls.filter(([type]) => type === 'updateInputStep');
+    expect(typing.length).toBeGreaterThan(0);
+    expect(JSON.stringify(typing)).not.toContain('Acme');
   });
 });

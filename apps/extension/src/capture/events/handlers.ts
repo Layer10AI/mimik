@@ -107,6 +107,7 @@ class CaptureController {
       ['auxclick', this.onAuxClick.bind(this), ACTIVE_CAPTURE],
       ['keydown', this.onKeydown.bind(this), ACTIVE_CAPTURE],
       ['input', this.onInput.bind(this), PASSIVE_CAPTURE],
+      ['change', this.onChange.bind(this), PASSIVE_CAPTURE],
       ['focusout', this.onFocusOut.bind(this), PASSIVE_CAPTURE],
     ];
     if (isTopFrame) {
@@ -220,6 +221,8 @@ class CaptureController {
     if (!raw || !(raw instanceof Element) || isReplayedClick(me) || me.shiftKey) return;
     const target = findFocusableAncestor(raw);
     if (isMimikElement(target)) return;
+    // A select is recorded by its pick (onChange); the click that opens its list is part of that step.
+    if (target instanceof HTMLSelectElement) return;
     const samePick = this.pickedOption?.contains(target) && Date.now() - this.pickedAt < REPEAT_CLICK_MS * 3;
     this.pickedOption = null;
     if (samePick) return;
@@ -299,20 +302,8 @@ class CaptureController {
   private onInput(e: Event) {
     const target = eventTarget(e);
     if (!target || !(target instanceof HTMLElement)) return;
-    if (
-      !(
-        target instanceof HTMLInputElement ||
-        target instanceof HTMLTextAreaElement ||
-        target instanceof HTMLSelectElement ||
-        target.isContentEditable
-      )
-    )
+    if (!(target instanceof HTMLInputElement || target instanceof HTMLTextAreaElement || target.isContentEditable))
       return;
-
-    if (target instanceof HTMLSelectElement) {
-      this.enqueue(this.capture('input', target));
-      return;
-    }
 
     if (target instanceof HTMLInputElement && (target.type === 'checkbox' || target.type === 'radio')) return;
     if (!this.recordTyping) return;
@@ -324,6 +315,13 @@ class CaptureController {
     } else {
       this.startInput(target);
     }
+  }
+
+  // One step per pick from a native select. Its option is a choice, not typed text, so it may be named.
+  private onChange(e: Event) {
+    const target = eventTarget(e);
+    if (target instanceof HTMLSelectElement && !isMimikElement(target))
+      this.enqueue(this.capture('input', target, undefined, true));
   }
 
   private startInput(target: HTMLElement, atEvent?: FrozenRect) {

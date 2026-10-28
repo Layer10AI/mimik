@@ -215,3 +215,17 @@ describe('accessibility-tree sources', () => {
     expect(buildFallbackDescription('input', axMeta({ name: 'Cell B4' }))).toBe('steps.typeInto[Cell B4]');
   });
 });
+
+describe('a pick from a native select', () => {
+  const select = (overrides: Partial<ElementMeta>) => makeMeta({ tag: 'select', role: 'select', ...overrides });
+
+  it('names the option picked and the field it was picked in', () => {
+    const meta = select({ textContent: '6100 · Office supplies', ariaLabel: 'GL account' });
+    expect(buildFallbackDescription('input', meta)).toBe('steps.selectIn[6100 · Office supplies,GL account]');
+  });
+
+  it('names just the option when the field has no label', () => {
+    const meta = select({ textContent: '6100 · Office supplies' });
+    expect(buildFallbackDescription('input', meta)).toBe('steps.select[6100 · Office supplies]');
+  });
+});

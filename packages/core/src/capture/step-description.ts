@@ -28,6 +28,8 @@ const INVISIBLE = /[\p{Cf}\uFFFC\uFFFD]/gu;
 const IDENTIFIER = /^(?=.*(?:[\d_.:[\]-]|[a-z][A-Z]))\S+$/;
 const DIGITS_ONLY = /^\d+$/;
 
+const tidy = (value: string | null | undefined) => (value ?? '').replace(INVISIBLE, '').trim();
+
 function hasTrait(role: string | null | undefined, trait: RoleTrait): boolean {
   return ROLE_TRAITS[role ?? '']?.includes(trait) ?? false;
 }
@@ -38,7 +40,6 @@ interface NameCandidate {
 }
 
 function nameCandidates(meta: ElementMeta): NameCandidate[] {
-  const tidy = (value: string | null | undefined) => (value ?? '').replace(INVISIBLE, '').trim();
   const role = meta.role;
   const shown = tidy(meta.textContent?.slice(0, VALUE_LIMIT));
   const shownIsLabel = !hasTrait(role, 'typedInto') && !(hasTrait(role, 'endsTheSearch') && DIGITS_ONLY.test(shown));
@@ -73,6 +74,16 @@ function elementName(meta: ElementMeta): string {
   return best.text.slice(0, NAME_LIMIT);
 }
 
+// A pick from a native select names its option, and the field when it has a name of its own.
+function describeInput(meta: ElementMeta, name: string, target: string, typed?: string): string {
+  const picked = meta.tag === 'select' ? tidy(meta.textContent?.slice(0, VALUE_LIMIT)) : '';
+  if (picked) return picked === name ? i18n.t('steps.select', [picked]) : i18n.t('steps.selectIn', [picked, name]);
+  if (meta.inputType === 'password') return i18n.t('steps.typeSecret');
+  if (typed?.trim()) return typedTitle(typed, name || null);
+  if (meta.inputType) return i18n.t('steps.typeIntoField', [meta.inputType, target]);
+  return i18n.t('steps.typeInto', [target]);
+}
+
 export function buildFallbackDescription(action: string, meta: ElementMeta, typed?: string): string {
   const name = elementName(meta);
   const target = name || meta.role || meta.tag || '';
@@ -96,10 +107,7 @@ export function buildFallbackDescription(action: string, meta: ElementMeta, type
       if (meta.href) return i18n.t('steps.clickLink', [name]);
       return i18n.t('steps.click', [name]);
     case 'input':
-      if (meta.inputType === 'password') return i18n.t('steps.typeSecret');
-      if (typed?.trim()) return typedTitle(typed, name || null);
-      if (meta.inputType) return i18n.t('steps.typeIntoField', [meta.inputType, target]);
-      return i18n.t('steps.typeInto', [target]);
+      return describeInput(meta, name, target, typed);
     case 'copy':
       return i18n.t('steps.copyFrom', [target]);
     case 'paste':

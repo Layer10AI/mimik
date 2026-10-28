@@ -664,6 +664,7 @@ steps:
   pressKey: 'Pressionar $1 em "$2"'
   toggleCheckbox: 'Marcar "$1"'
   select: 'Selecionar "$1"'
+  selectIn: 'Selecionar "$1" em "$2"'
   enter: 'Digitar em "$1"'
   toggleSwitch: 'Ligar/desligar "$1"'
   clickLink: 'Clicar no link "$1"'

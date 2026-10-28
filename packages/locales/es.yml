@@ -664,6 +664,7 @@ steps:
   pressKey: 'Pulsar $1 en "$2"'
   toggleCheckbox: 'Marcar "$1"'
   select: 'Seleccionar "$1"'
+  selectIn: 'Seleccionar "$1" en "$2"'
   enter: 'Escribir en "$1"'
   toggleSwitch: 'Alternar "$1"'
   clickLink: "Clic en el enlace \"$1\""
