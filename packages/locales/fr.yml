@@ -664,6 +664,7 @@ steps:
   pressKey: 'Appuyer sur $1 dans "$2"'
   toggleCheckbox: 'Cocher "$1"'
   select: 'Sélectionner "$1"'
+  selectIn: 'Sélectionner "$1" dans "$2"'
   enter: 'Saisir dans "$1"'
   toggleSwitch: 'Activer/désactiver "$1"'
   clickLink: "Cliquer sur le lien « $1 »"

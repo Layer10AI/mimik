@@ -1,5 +1,7 @@
 import { getCssSelector } from 'css-selector-generator';
 import type { ElementMeta } from '@/core/guides/types';
+import { getAccessibleName } from './context';
+import { isRedactedField } from './element-utils';
 
 function getCleanText(el: HTMLElement): string | null {
   if (el instanceof HTMLInputElement) return null;
@@ -33,6 +35,13 @@ function getCleanText(el: HTMLElement): string | null {
   }
 }
 
+// A select shows the option it holds, not the first line of its option list.
+function pickedOptionText(select: HTMLSelectElement): string | null {
+  if (isRedactedField(select)) return null;
+  const picked = Array.from(select.selectedOptions, (option) => option.text.trim()).filter(Boolean);
+  return picked.join(', ').slice(0, 80) || null;
+}
+
 export interface FrozenRect {
   x: number;
   y: number;
@@ -58,8 +67,9 @@ export function extractElementMeta(el: HTMLElement, atEvent?: FrozenRect): Eleme
     source: 'dom',
     tag: el.tagName?.toLowerCase() ?? 'unknown',
     cssSelector,
-    textContent: getCleanText(el),
-    ariaLabel: el.getAttribute('aria-label'),
+    textContent: el instanceof HTMLSelectElement ? pickedOptionText(el) : getCleanText(el),
+    // For a select, its label: the option is the text, so the field needs a name of its own.
+    ariaLabel: el instanceof HTMLSelectElement ? getAccessibleName(el) : el.getAttribute('aria-label'),
     placeholder: el.getAttribute('placeholder'),
     altText: el instanceof HTMLImageElement ? el.alt : null,
     name: el.getAttribute('name'),

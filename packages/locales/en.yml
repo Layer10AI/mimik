@@ -664,6 +664,7 @@ steps:
   pressKey: 'Press $1 on "$2"'
   toggleCheckbox: 'Toggle "$1"'
   select: 'Select "$1"'
+  selectIn: 'Select "$1" in "$2"'
   enter: 'Enter "$1"'
   toggleSwitch: 'Toggle "$1"'
   clickLink: 'Click link "$1"'

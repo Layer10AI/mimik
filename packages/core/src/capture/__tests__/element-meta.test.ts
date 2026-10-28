@@ -68,3 +68,34 @@ describe('extractElementMeta', () => {
     }
   });
 });
+
+describe('extractElementMeta for a native select', () => {
+  const OPTIONS =
+    '<option value="">Choose a GL account</option><option value="6100" selected>6100 · Office supplies</option>';
+
+  function selectIn(html: string): HTMLElement {
+    document.body.innerHTML = html;
+    return document.querySelector('select') as HTMLElement;
+  }
+
+  it('shows the option picked, not the first line of the option list, and names the select by its label', () => {
+    const meta = extractElementMeta(selectIn(`<label for="gl">GL account</label><select id="gl">${OPTIONS}</select>`));
+    expect(meta.textContent).toBe('6100 · Office supplies');
+    expect(meta.ariaLabel).toBe('GL account');
+  });
+
+  it('reads a wrapping label without the options inside it', () => {
+    const meta = extractElementMeta(selectIn(`<label>GL account <select>${OPTIONS}</select></label>`));
+    expect(meta.ariaLabel).toBe('GL account');
+  });
+
+  it('leaves an unlabelled select unnamed rather than naming it after its options', () => {
+    const meta = extractElementMeta(selectIn(`<select>${OPTIONS}</select>`));
+    expect(meta.ariaLabel).toBeNull();
+  });
+
+  it('does not show the option picked inside a redacted area', () => {
+    const meta = extractElementMeta(selectIn(`<div data-mimik-redact><select>${OPTIONS}</select></div>`));
+    expect(meta.textContent).toBeNull();
+  });
+});

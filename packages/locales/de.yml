@@ -594,6 +594,7 @@ steps:
   pressKey: '$1 auf "$2" drücken'
   toggleCheckbox: '"$1" umschalten'
   select: '"$1" auswählen'
+  selectIn: '"$1" in "$2" auswählen'
   enter: 'In "$1" eingeben'
   toggleSwitch: '"$1" umschalten'
   clickLink: "Link „$1“ anklicken"
