@@ -13,7 +13,7 @@ export const DEFAULT_PRESETS: Record<PresetKey, boolean> = {
   email: true,
   phone: true,
   ssn: false,
-  creditCard: false,
+  creditCard: true,
   ipAddress: false,
   macAddress: false,
 };

@@ -54,7 +54,7 @@ describe('BlurManager against a detector that is not the DOM scanner', () => {
     await new BlurManager(detector).start();
 
     expect(calls).toEqual(['start']);
-    expect(presets[0]).toEqual(['email', 'phone']);
+    expect(presets[0]).toEqual(['email', 'phone', 'creditCard']);
   });
 
   it('routes a category change through the interface', async () => {

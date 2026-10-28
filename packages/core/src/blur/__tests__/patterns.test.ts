@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { PRESET_LABELS, type PresetKey, patternsFor, sensitiveSpans } from '../patterns';
+import { DEFAULT_PRESETS, PRESET_LABELS, type PresetKey, patternsFor, sensitiveSpans } from '../patterns';
 
 const PRESET_REGEXES = Object.fromEntries(
   (['email', 'phone', 'ssn', 'creditCard', 'ipAddress', 'macAddress'] as const).map((kind) => [
@@ -16,6 +16,12 @@ describe('PRESET_LABELS', () => {
       expect(typeof PRESET_LABELS[key]).toBe('string');
       expect(PRESET_LABELS[key].length).toBeGreaterThan(0);
     }
+  });
+});
+
+describe('DEFAULT_PRESETS', () => {
+  it('pre-ticks card numbers along with email and phone', () => {
+    expect(DEFAULT_PRESETS).toMatchObject({ email: true, phone: true, creditCard: true });
   });
 });
 
