@@ -20,6 +20,7 @@ What it never does:
 - It never records what you type into fields. Steps name the field, not its contents.
 - It doesn't record the interview page itself.
 - It sends nothing anywhere unless you start a recording from your ValueScout interview.
+  The one exception is an optional feature, such as voice narration or AI step descriptions, that you switch on yourself with your own API key: its text or audio goes to the provider you chose.
 
 Based on Mimik, the open-source step recorder by Westpoint (MIT licence).
 
