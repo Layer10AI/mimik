@@ -17,7 +17,7 @@ When your interviewer has switched on screen sharing, the interview page offers 
 You see every step and screenshot on the interview page before anything is sent, and you can remove any of them. They go to your interviewer only with your next answer.
 
 What it never does:
-- It never records what you type into fields. Steps name the field, not its contents.
+- In a ValueScout interview, it never records what you type into fields. Steps name the field, not its contents.
 - It doesn't record the interview page itself.
 - It sends nothing anywhere unless you start a recording from your ValueScout interview.
   The one exception is an optional feature, such as voice narration or AI step descriptions, that you switch on yourself with your own API key: its text or audio goes to the provider you chose.
