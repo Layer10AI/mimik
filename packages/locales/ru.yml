@@ -94,6 +94,7 @@ recording:
   justNow: Только что
   secondsAgo: $1 с назад
   minutesAgo: $1 мин назад
+  interviewRecording: "Запись для вашего интервью в ValueScout"
 
 settings:
   cardKeyboard: Ввод и клавиши

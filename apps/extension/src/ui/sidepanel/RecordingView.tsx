@@ -51,6 +51,7 @@ export function RecordingView({
   const [steps, setSteps] = useState<LiveStep[]>([]);
   const [siteUrl, setSiteUrl] = useState('');
   const [voiceEnabled, setVoiceEnabled] = useState(false);
+  const [interviewMode, setInterviewMode] = useState(false);
   const [, setTick] = useState(0);
   const bottomRef = useRef<HTMLDivElement>(null);
 
@@ -102,6 +103,10 @@ export function RecordingView({
   }, []);
 
   useEffect(() => {
+    localStorage.get(['interviewMode']).then((stored) => setInterviewMode(stored.interviewMode === true));
+  }, []);
+
+  useEffect(() => {
     if (voice.phase !== 'error' || voice.reason !== 'permission-denied') return;
     setVoiceEnabled(false);
     void localStorage.set({ voiceEnabled: false });
@@ -141,6 +146,11 @@ export function RecordingView({
       </div>
 
       <div className="flex-1 overflow-y-auto pt-12">
+        {interviewMode && (
+          <p className="text-xs text-center text-muted-foreground px-4 pb-2">
+            {i18n.t('recording.interviewRecording')}
+          </p>
+        )}
         {steps.length === 0 ? (
           <div className="flex flex-col items-center justify-center h-full gap-3">
             <CameraMascot size={64} />

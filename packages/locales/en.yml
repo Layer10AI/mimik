@@ -94,6 +94,7 @@ recording:
   justNow: Just now
   secondsAgo: "$1s ago"
   minutesAgo: "$1m ago"
+  interviewRecording: "Recording for your ValueScout interview"
 
 settings:
   cardKeyboard: "Typing and keys"

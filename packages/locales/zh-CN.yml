@@ -94,6 +94,7 @@ recording:
   justNow: 刚刚
   secondsAgo: "$1 秒前"
   minutesAgo: "$1 分钟前"
+  interviewRecording: "正在录制你的 ValueScout 访谈"
 
 settings:
   cardKeyboard: "输入与按键"
