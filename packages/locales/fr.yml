@@ -94,6 +94,7 @@ recording:
   justNow: "À l'instant"
   secondsAgo: "Il y a $1 s"
   minutesAgo: "Il y a $1 min"
+  interviewRecording: "Enregistrement pour votre entretien ValueScout"
 
 settings:
   cardKeyboard: "Saisie et touches"

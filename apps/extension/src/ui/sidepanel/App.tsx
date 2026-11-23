@@ -12,6 +12,7 @@ import { createTab } from '@/lib/browser-api/create-tab';
 import { focusWindow } from '@/lib/browser-api/focus-window';
 import { getActiveTab } from '@/lib/browser-api/get-active-tab';
 import { getExtensionURL } from '@/lib/browser-api/get-extension-url';
+import { localStorage } from '@/lib/browser-api/local-storage';
 import { queryTabs } from '@/lib/browser-api/query-tabs';
 import { requestHostPermissions } from '@/lib/browser-api/request-host-permissions';
 import { updateTab } from '@/lib/browser-api/update-tab';
@@ -27,6 +28,7 @@ import { GuideEditor } from './GuideEditor';
 import { GuideMeCompletion } from './GuideMeCompletion';
 import { GuideMeView } from './GuideMeView';
 import { LibraryView } from './LibraryView';
+import { shouldOpenEditorAfterStop } from './lib/should-open-editor-after-stop';
 import { MascotIcon } from './MascotIcon';
 import { RecordingView } from './RecordingView';
 
@@ -145,8 +147,14 @@ export function App() {
 
   const handleStopRecording = useCallback(async () => {
     try {
+      // Read before stopping: the ValueScout bridge clears interviewMode when the recording stops.
+      const stored = await localStorage.get(['interviewMode']);
       const res = await sendMessage('stopRecording', undefined);
       if (res.success) {
+        if (!shouldOpenEditorAfterStop(stored.interviewMode)) {
+          setView({ name: 'library' });
+          return;
+        }
         setView(res.inserted && res.guideId ? { name: 'editor', guideId: res.guideId } : { name: 'library' });
         if (res.guideId) {
           const url = getExtensionURL(`/fullview.html?guideId=${res.guideId}`);
